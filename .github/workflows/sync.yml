@@ -1,5 +1,4 @@
-# .github/workflows/sync.yml
-name: Sync Fork
+name: Upstream Sync
 
 permissions:
   contents: write
