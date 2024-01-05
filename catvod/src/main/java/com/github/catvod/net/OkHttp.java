@@ -1,6 +1,7 @@
 package com.github.catvod.net;
 
 import android.net.Uri;
+import android.text.TextUtils;
 
 import androidx.collection.ArrayMap;
 
@@ -9,6 +10,7 @@ import com.github.catvod.utils.Path;
 import com.github.catvod.utils.Util;
 import com.google.common.net.HttpHeaders;
 
+import java.net.ProxySelector;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -28,10 +30,16 @@ public class OkHttp {
 
     private static final int TIMEOUT = 30 * 1000;
     private static final int CACHE = 100 * 1024 * 1024;
+    private static final ProxySelector defaultSelector;
 
+    private boolean proxy;
     private DnsOverHttps dns;
     private OkHttpClient client;
-    private ProxySelector selector;
+    private OkProxySelector selector;
+
+    static {
+        defaultSelector = ProxySelector.getDefault();
+    }
 
     private static class Loader {
         static volatile OkHttp INSTANCE = new OkHttp();
@@ -46,20 +54,21 @@ public class OkHttp {
     }
 
     public void setDoh(Doh doh) {
-        OkHttpClient dohClient = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).hostnameVerifier(SSLCompat.VERIFIER).sslSocketFactory(new SSLCompat(), SSLCompat.TM).build();
+        OkHttpClient dohClient = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).build();
         dns = doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder().client(dohClient).url(HttpUrl.get(doh.getUrl())).bootstrapDnsHosts(doh.getHosts()).build();
         client = null;
     }
 
     public void setProxy(String proxy) {
-        ProxySelector.setDefault(selector());
-        selector().setProxy(proxy);
+        ProxySelector.setDefault(TextUtils.isEmpty(proxy) ? defaultSelector : selector());
+        if (!TextUtils.isEmpty(proxy)) selector().setProxy(proxy);
+        this.proxy = !TextUtils.isEmpty(proxy);
         client = null;
     }
 
-    public static ProxySelector selector() {
+    public static OkProxySelector selector() {
         if (get().selector != null) return get().selector;
-        return get().selector = new ProxySelector();
+        return get().selector = new OkProxySelector();
     }
 
     public static OkHttpClient client() {
@@ -77,6 +86,15 @@ public class OkHttp {
 
     public static OkHttpClient client(boolean redirect, int timeout) {
         return redirect ? client(timeout) : noRedirect(timeout);
+    }
+
+    public static String string(String url) {
+        try {
+            return url.startsWith("http") ? newCall(url).execute().body().string() : "";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     public static Call newCall(String url) {
@@ -122,8 +140,8 @@ public class OkHttp {
     }
 
     private static OkHttpClient.Builder getBuilder() {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(new OkhttpInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier(SSLCompat.VERIFIER).sslSocketFactory(new SSLCompat(), SSLCompat.TM);
-        builder.proxySelector(selector());
+        OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(new OkhttpInterceptor()).connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS).readTimeout(TIMEOUT, TimeUnit.MILLISECONDS).writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS).dns(dns()).hostnameVerifier((hostname, session) -> true).sslSocketFactory(new SSLCompat(), SSLCompat.TM);
+        builder.proxySelector(get().proxy ? selector() : defaultSelector);
         return builder;
     }
 }

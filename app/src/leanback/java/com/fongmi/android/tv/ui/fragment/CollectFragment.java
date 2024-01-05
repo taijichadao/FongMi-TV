@@ -90,7 +90,7 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
 
     @Override
     protected void initData() {
-        addVideo(mCollect.getList());
+        if (mCollect != null) addVideo(mCollect.getList());
     }
 
     private boolean checkLastSize(List<Vod> items) {
@@ -118,7 +118,7 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
     public void onItemClick(Vod item) {
         getActivity().setResult(Activity.RESULT_OK);
         if (item.isFolder()) VodActivity.start(getActivity(), item.getSiteKey(), Result.folder(item));
-        else VideoActivity.start(getActivity(), item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic());
+        else VideoActivity.collect(getActivity(), item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic());
     }
 
     @Override
@@ -128,7 +128,7 @@ public class CollectFragment extends BaseFragment implements CustomScroller.Call
 
     @Override
     public void onLoadMore(String page) {
-        if (mCollect.getSite().getKey().equals("all")) return;
+        if (mCollect == null || mCollect.getSite().getKey().equals("all")) return;
         mViewModel.searchContent(mCollect.getSite(), getKeyword(), page);
         mScroller.setLoading(true);
     }

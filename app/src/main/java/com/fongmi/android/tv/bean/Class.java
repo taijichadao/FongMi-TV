@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
+import com.fongmi.android.tv.App;
 import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.SerializedName;
 
@@ -20,11 +21,11 @@ import java.util.List;
 public class Class implements Parcelable {
 
     @Attribute(name = "id", required = false)
-    @SerializedName("type_id")
+    @SerializedName(value = "type_id", alternate = "id")
     private String typeId;
 
     @Text
-    @SerializedName("type_name")
+    @SerializedName(value = "type_name", alternate = "name")
     private String typeName;
 
     @SerializedName("type_flag")
@@ -33,10 +34,23 @@ public class Class implements Parcelable {
     @SerializedName("filters")
     private List<Filter> filters;
 
+    @SerializedName("land")
+    private int land;
+
+    @SerializedName("circle")
+    private int circle;
+
+    @SerializedName("ratio")
+    private float ratio;
+
     private Boolean filter;
     private boolean activated;
 
     public Class() {
+    }
+
+    public static Class objectFrom(String json) {
+        return App.gson().fromJson(json, Class.class);
     }
 
     public String getTypeId() {
@@ -68,7 +82,21 @@ public class Class implements Parcelable {
     }
 
     public void setFilters(List<Filter> filters) {
+        if (filters == null || filters.isEmpty()) return;
         this.filters = filters;
+        this.setFilter(false);
+    }
+
+    public int getLand() {
+        return land;
+    }
+
+    public int getCircle() {
+        return circle;
+    }
+
+    public float getRatio() {
+        return ratio;
     }
 
     public void setFilter(Boolean filter) {
@@ -101,9 +129,13 @@ public class Class implements Parcelable {
         this.typeName = Trans.s2t(typeName);
     }
 
-    public HashMap<String, String> getExtend() {
+    public Style getStyle() {
+        return Style.get(getLand(), getCircle(), getRatio());
+    }
+
+    public HashMap<String, String> getExtend(boolean change) {
         HashMap<String, String> extend = new HashMap<>();
-        for (Filter filter : getFilters()) if (filter.getInit() != null) extend.put(filter.getKey(), filter.setActivated(filter.getInit()));
+        for (Filter filter : getFilters()) if (filter.getInit() != null) extend.put(filter.getKey(), change ? filter.setActivated(filter.getInit()) : filter.getInit());
         return extend;
     }
 
@@ -127,6 +159,9 @@ public class Class implements Parcelable {
         dest.writeString(this.typeFlag);
         dest.writeList(this.filters);
         dest.writeValue(this.filter);
+        dest.writeInt(this.land);
+        dest.writeInt(this.circle);
+        dest.writeFloat(this.ratio);
         dest.writeByte(this.activated ? (byte) 1 : (byte) 0);
     }
 
@@ -137,6 +172,9 @@ public class Class implements Parcelable {
         this.filters = new ArrayList<>();
         in.readList(this.filters, Filter.class.getClassLoader());
         this.filter = (Boolean) in.readValue(Boolean.class.getClassLoader());
+        this.land = in.readInt();
+        this.circle = in.readInt();
+        this.ratio = in.readFloat();
         this.activated = in.readByte() != 0;
     }
 

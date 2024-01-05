@@ -10,9 +10,8 @@ import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 
-import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.fongmi.android.tv.utils.Utils;
+import com.fongmi.android.tv.utils.Util;
 
 public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
 
@@ -36,7 +35,7 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
     }
 
     private CustomKeyDownVod(Activity activity, View videoView) {
-        this.manager = (AudioManager) App.get().getSystemService(Context.AUDIO_SERVICE);
+        this.manager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
         this.detector = new GestureDetector(activity, this);
         this.listener = (Listener) activity;
         this.videoView = videoView;
@@ -63,7 +62,7 @@ public class CustomKeyDownVod extends GestureDetector.SimpleOnGestureListener {
     public boolean onDown(@NonNull MotionEvent e) {
         if (isEdge(e) || lock) return true;
         volume = manager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        bright = Utils.getBrightness(activity);
+        bright = Util.getBrightness(activity);
         changeBright = false;
         changeVolume = false;
         changeSpeed = false;

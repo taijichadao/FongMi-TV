@@ -6,11 +6,11 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.player.extractor.Magnet;
 import com.fongmi.android.tv.utils.Sniffer;
-import com.fongmi.android.tv.utils.Utils;
+import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.utils.Trans;
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 import org.simpleframework.xml.Attribute;
@@ -107,7 +107,7 @@ public class Flag implements Parcelable {
     }
 
     public Episode find(String remarks, boolean strict) {
-        int number = Utils.getDigit(remarks);
+        int number = Util.getDigit(remarks);
         if (getEpisodes().size() == 0) return null;
         if (getEpisodes().size() == 1) return getEpisodes().get(0);
         for (Episode item : getEpisodes()) if (item.rule1(remarks)) return item;
@@ -149,7 +149,7 @@ public class Flag implements Parcelable {
     @NonNull
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return App.gson().toJson(this);
     }
 
     @Override

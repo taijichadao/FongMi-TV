@@ -9,7 +9,6 @@
 
     <!-- Live -->
     <string name="live_pass">Pass</string>
-    <string name="live_group">Group</string>
     <string name="live_line">Line <xliff:g name="name">%s</xliff:g></string>
 
     <!-- Detail -->
@@ -35,6 +34,7 @@
     <string name="play_next">Next</string>
     <string name="play_prev">Prev</string>
     <string name="play_loop">Loop</string>
+    <string name="play_timer">Timer</string>
     <string name="play_danmu">Danmu</string>
     <string name="play_change">Change</string>
     <string name="play_forward">→</string>
@@ -69,7 +69,9 @@
     <string name="setting_player_ua">User-Agent</string>
     <string name="setting_player_flag">Flag play</string>
     <string name="setting_player_http">HTTP method</string>
+    <string name="setting_player_buffer">Buffer time</string>
     <string name="setting_player_tunnel">Tunnel mode</string>
+    <string name="setting_player_caption">Caption style</string>
     <string name="setting_player_subtitle">Subtitle size</string>
     <string name="setting_player_background">Background play</string>
     <string name="setting_decode">Decode</string>
@@ -80,6 +82,8 @@
     <string name="setting_doh">DoH</string>
     <string name="setting_proxy">Proxy</string>
     <string name="setting_cache">Cache</string>
+    <string name="setting_backup">Backup</string>
+    <string name="setting_backup_auto">Auto</string>
     <string name="setting_version">Version</string>
     <string name="setting_storage">Permission</string>
     <string name="setting_off">Off</string>
@@ -92,9 +96,11 @@
     <string name="search_hot">Hot</string>
 
     <!-- Dialog -->
+    <string name="dialog_edit">Edit</string>
     <string name="dialog_positive">OK</string>
     <string name="dialog_negative">Cancel</string>
     <string name="dialog_config_hint">Please enter the config…</string>
+    <string name="dialog_config_name">Please enter the name…</string>
     <string name="dialog_config_url">Please enter the url…</string>
 
     <!-- Error -->
@@ -104,9 +110,9 @@
     <string name="error_play_prev">It\'s the first episode!</string>
     <string name="error_play_parse">Unable to parse url</string>
     <string name="error_play_url">Unable to load url</string>
-    <string name="error_play_format">Unsupported video format</string>
+    <string name="error_play_flag">No flag data</string>
     <string name="error_play_timeout">Timed out</string>
-    <string name="error_play_episode">No episode data</string>
+    <string name="error_detail">No play data</string>
     <string name="error_empty">Not found</string>
 
     <!-- Update -->
@@ -123,6 +129,7 @@
 
     <!-- UNIT -->
     <string name="all">All</string>
+    <string name="times">times</string>
 
     <string-array name="select_decode">
         <item>Soft</item>
@@ -174,6 +181,17 @@
     <string-array name="select_flag">
         <item>Auto</item>
         <item>Manual</item>
+    </string-array>
+
+    <string-array name="select_caption">
+        <item>Default</item>
+        <item>System</item>
+    </string-array>
+
+    <string-array name="select_track">
+        <item>Select audio track</item>
+        <item>Select video track</item>
+        <item>Select subtitle track</item>
     </string-array>
 
 </resources>

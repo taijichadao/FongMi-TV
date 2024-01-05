@@ -6,8 +6,9 @@ import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.db.AppDatabase;
-import com.google.gson.Gson;
+import com.github.catvod.utils.Prefers;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
@@ -38,7 +39,7 @@ public class Config {
 
     public static List<Config> arrayFrom(String str) {
         Type listType = new TypeToken<List<Config>>() {}.getType();
-        List<Config> items = new Gson().fromJson(str, listType);
+        List<Config> items = App.gson().fromJson(str, listType);
         return items == null ? Collections.emptyList() : items;
     }
 
@@ -171,7 +172,8 @@ public class Config {
     }
 
     public static void delete(String url, int type) {
-        AppDatabase.get().getConfigDao().delete(url, type);
+        if (type == 2) AppDatabase.get().getConfigDao().delete(type);
+        else AppDatabase.get().getConfigDao().delete(url, type);
     }
 
     public static Config vod() {
@@ -222,6 +224,7 @@ public class Config {
     public Config update() {
         if (isEmpty()) return this;
         setTime(System.currentTimeMillis());
+        Prefers.put("config_" + getType(), getUrl());
         AppDatabase.get().getConfigDao().update(this);
         return this;
     }

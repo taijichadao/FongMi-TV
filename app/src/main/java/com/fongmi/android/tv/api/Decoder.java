@@ -2,12 +2,12 @@ package com.fongmi.android.tv.api;
 
 import android.util.Base64;
 
-import com.fongmi.android.tv.utils.Utils;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.utils.Asset;
 import com.github.catvod.utils.Json;
 import com.github.catvod.utils.Path;
 import com.github.catvod.utils.Util;
-import com.google.common.io.BaseEncoding;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -24,8 +24,8 @@ public class Decoder {
         String key = url.contains(";") ? url.split(";")[2] : "";
         url = url.contains(";") ? url.split(";")[0] : url;
         String data = getData(url);
-        if (Json.valid(data)) return fix(url, data);
         if (data.isEmpty()) throw new Exception();
+        if (Json.valid(data)) return fix(url, data);
         if (data.contains("**")) data = base64(data);
         if (data.startsWith("2423")) data = cbc(data);
         if (key.length() > 0) data = ecb(data, key);
@@ -33,7 +33,7 @@ public class Decoder {
     }
 
     private static String fix(String url, String data) {
-        if (url.startsWith("file")) url = Utils.convert(url);
+        if (url.startsWith("file") || url.startsWith("assets")) url = UrlUtil.convert(url);
         data = data.replace("./", url.substring(0, url.lastIndexOf("/") + 1));
         return data;
     }
@@ -58,33 +58,30 @@ public class Decoder {
         }
     }
 
-    private static String getData(String url) throws Exception {
-        if (url.startsWith("http")) return OkHttp.newCall(url).execute().body().string();
+    private static String getData(String url) {
         if (url.startsWith("file")) return Path.read(url);
-        throw new Exception();
+        if (url.startsWith("assets")) return Asset.read(url);
+        if (url.startsWith("http")) return OkHttp.string(url);
+        return "";
     }
 
     private static String ecb(String data, String key) throws Exception {
-        SecretKeySpec spec = new SecretKeySpec(padEnd(key), "AES");
+        SecretKeySpec spec = new SecretKeySpec(padEnd(key).getBytes(), "AES");
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, spec);
-        return new String(cipher.doFinal(decodeHex(data)), StandardCharsets.UTF_8);
+        return new String(cipher.doFinal(Util.hex2byte(data)), StandardCharsets.UTF_8);
     }
 
     private static String cbc(String data) throws Exception {
-        int indexKey = data.indexOf("2324") + 4;
-        String key = new String(decodeHex(data.substring(0, indexKey)), StandardCharsets.UTF_8);
-        key = key.replace("$#", "").replace("#$", "");
-        int indexIv = data.length() - 26;
-        String iv = data.substring(indexIv).trim();
-        iv = new String(decodeHex(iv), StandardCharsets.UTF_8);
-        SecretKeySpec keySpec = new SecretKeySpec(padEnd(key), "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(padEnd(iv));
+        String decode = new String(Util.hex2byte(data)).toLowerCase();
+        String key = padEnd(decode.substring(decode.indexOf("$#") + 2, decode.indexOf("#$")));
+        String iv = padEnd(decode.substring(decode.length() - 13));
+        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes());
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-        data = data.substring(indexKey, indexIv).trim();
-        byte[] encryptDataBytes = decodeHex(data);
-        byte[] decryptData = cipher.doFinal(encryptDataBytes);
+        data = data.substring(data.indexOf("2324") + 4, data.length() - 26);
+        byte[] decryptData = cipher.doFinal(Util.hex2byte(data));
         return new String(decryptData, StandardCharsets.UTF_8);
     }
 
@@ -99,11 +96,7 @@ public class Decoder {
         return matcher.find() ? data.substring(data.indexOf(matcher.group()) + 10) : "";
     }
 
-    private static byte[] padEnd(String key) {
-        return (key + "0000000000000000".substring(key.length())).getBytes(StandardCharsets.UTF_8);
-    }
-
-    private static byte[] decodeHex(String s) {
-        return BaseEncoding.base16().decode(s.toUpperCase());
+    private static String padEnd(String key) {
+        return key + "0000000000000000".substring(key.length());
     }
 }

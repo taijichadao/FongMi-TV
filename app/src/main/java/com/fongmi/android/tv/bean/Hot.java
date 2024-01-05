@@ -1,7 +1,7 @@
 package com.fongmi.android.tv.bean;
 
+import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Setting;
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ public class Hot {
     private List<Data> data;
 
     private static Hot objectFrom(String str) {
-        return new Gson().fromJson(str, Hot.class);
+        return App.gson().fromJson(str, Hot.class);
     }
 
     public static List<String> get(String str) {

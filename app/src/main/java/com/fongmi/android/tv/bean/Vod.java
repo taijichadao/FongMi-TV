@@ -5,8 +5,9 @@ import android.os.Parcelable;
 import android.text.TextUtils;
 import android.view.View;
 
+import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.utils.Sniffer;
 import com.github.catvod.utils.Trans;
-import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
@@ -78,6 +79,15 @@ public class Vod implements Parcelable {
     @SerializedName("style")
     private Style style;
 
+    @SerializedName("land")
+    private int land;
+
+    @SerializedName("circle")
+    private int circle;
+
+    @SerializedName("ratio")
+    private float ratio;
+
     @Path("dl")
     @ElementList(entry = "dd", required = false, inline = true)
     private List<Flag> vodFlags;
@@ -86,7 +96,7 @@ public class Vod implements Parcelable {
 
     public static List<Vod> arrayFrom(String str) {
         Type listType = new TypeToken<List<Vod>>() {}.getType();
-        List<Vod> items = new Gson().fromJson(str, listType);
+        List<Vod> items = App.gson().fromJson(str, listType);
         return items == null ? Collections.emptyList() : items;
     }
 
@@ -162,7 +172,19 @@ public class Vod implements Parcelable {
     }
 
     public Style getStyle() {
-        return style;
+        return style != null ? style : Style.get(getLand(), getCircle(), getRatio());
+    }
+
+    public int getLand() {
+        return land;
+    }
+
+    public int getCircle() {
+        return circle;
+    }
+
+    public float getRatio() {
+        return ratio;
     }
 
     public List<Flag> getVodFlags() {
@@ -214,7 +236,7 @@ public class Vod implements Parcelable {
     }
 
     public Style getStyle(Style style) {
-        return getStyle() == null ? style : getStyle();
+        return getStyle() != null ? getStyle() : style != null ? style : Style.rect();
     }
 
     public String getVodPic(String pic) {
@@ -232,10 +254,10 @@ public class Vod implements Parcelable {
         this.vodName = Trans.s2t(vodName);
         this.vodArea = Trans.s2t(vodArea);
         this.typeName = Trans.s2t(typeName);
-        this.vodActor = Trans.s2t(vodActor);
         this.vodRemarks = Trans.s2t(vodRemarks);
-        this.vodContent = Trans.s2t(vodContent);
-        this.vodDirector = Trans.s2t(vodDirector);
+        if (vodActor != null) this.vodActor = Sniffer.CLICKER.matcher(vodActor).find() ? vodActor : Trans.s2t(vodActor);
+        if (vodContent != null) this.vodContent = Sniffer.CLICKER.matcher(vodContent).find() ? vodContent : Trans.s2t(vodContent);
+        if (vodDirector != null) this.vodDirector = Sniffer.CLICKER.matcher(vodDirector).find() ? vodDirector : Trans.s2t(vodDirector);
     }
 
     public void setVodFlags() {
@@ -281,6 +303,9 @@ public class Vod implements Parcelable {
         dest.writeString(this.vodPlayFrom);
         dest.writeString(this.vodPlayUrl);
         dest.writeString(this.vodTag);
+        dest.writeInt(this.land);
+        dest.writeInt(this.circle);
+        dest.writeFloat(this.ratio);
         dest.writeParcelable(this.cate, flags);
         dest.writeParcelable(this.style, flags);
         dest.writeTypedList(this.vodFlags);
@@ -301,6 +326,9 @@ public class Vod implements Parcelable {
         this.vodPlayFrom = in.readString();
         this.vodPlayUrl = in.readString();
         this.vodTag = in.readString();
+        this.land = in.readInt();
+        this.circle = in.readInt();
+        this.ratio = in.readFloat();
         this.cate = in.readParcelable(Cate.class.getClassLoader());
         this.style = in.readParcelable(Style.class.getClassLoader());
         this.vodFlags = in.createTypedArrayList(Flag.CREATOR);

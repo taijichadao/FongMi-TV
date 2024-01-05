@@ -12,8 +12,6 @@ import com.fongmi.android.tv.gson.MsgAdapter;
 import com.fongmi.android.tv.gson.UrlAdapter;
 import com.github.catvod.utils.Json;
 import com.github.catvod.utils.Trans;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
@@ -24,7 +22,6 @@ import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Persister;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,40 +45,45 @@ public class Result implements Parcelable {
     @SerializedName("filters")
     @JsonAdapter(FilterAdapter.class)
     private LinkedHashMap<String, List<Filter>> filters;
+
+    @SerializedName("url")
+    @JsonAdapter(UrlAdapter.class)
+    private Url url;
+
+    @JsonAdapter(MsgAdapter.class)
+    @SerializedName("msg")
+    private String msg;
+
     @SerializedName("header")
     private JsonElement header;
     @SerializedName("playUrl")
     private String playUrl;
     @SerializedName("jxFrom")
     private String jxFrom;
-    @SerializedName("parse")
-    private Integer parse;
-    @SerializedName("jx")
-    private Integer jx;
     @SerializedName("flag")
     private String flag;
     @SerializedName("danmaku")
     private String danmaku;
     @SerializedName("format")
     private String format;
-    @SerializedName("url")
-    @JsonAdapter(UrlAdapter.class)
-    private Url url;
+    @SerializedName("click")
+    private String click;
     @SerializedName("key")
     private String key;
     @SerializedName("subs")
     private List<Sub> subs;
     @SerializedName("pagecount")
     private Integer pagecount;
+    @SerializedName("parse")
+    private Integer parse;
     @SerializedName("code")
     private Integer code;
-    @JsonAdapter(MsgAdapter.class)
-    @SerializedName("msg")
-    private String msg;
+    @SerializedName("jx")
+    private Integer jx;
 
     public static Result objectFrom(String str) {
         try {
-            return new Gson().fromJson(str, Result.class);
+            return App.gson().fromJson(str, Result.class);
         } catch (Exception e) {
             return empty();
         }
@@ -126,6 +128,12 @@ public class Result implements Parcelable {
         type.setTypeName(item.getVodName());
         result.setTypes(List.of(type));
         return result;
+    }
+
+    public static Result type(String json) {
+        Result result = new Result();
+        result.setTypes(List.of(Class.objectFrom(json)));
+        return result.trans();
     }
 
     public static Result list(List<Vod> items) {
@@ -209,6 +217,14 @@ public class Result implements Parcelable {
         return format;
     }
 
+    public String getClick() {
+        return TextUtils.isEmpty(click) ? "" : click;
+    }
+
+    public void setClick(String click) {
+        this.click = click;
+    }
+
     public String getFlag() {
         return TextUtils.isEmpty(flag) ? "" : flag;
     }
@@ -238,7 +254,7 @@ public class Result implements Parcelable {
     }
 
     public List<Sub> getSubs() {
-        return subs == null ? Collections.emptyList() : subs;
+        return subs == null ? new ArrayList<>() : subs;
     }
 
     public Integer getPageCount() {
@@ -269,6 +285,10 @@ public class Result implements Parcelable {
         return Json.toMap(getHeader());
     }
 
+    public Style getStyle(Style style) {
+        return getList().isEmpty() ? Style.rect() : getList().get(0).getStyle(style);
+    }
+
     public Result clear() {
         getList().clear();
         return this;
@@ -285,7 +305,7 @@ public class Result implements Parcelable {
     @NonNull
     @Override
     public String toString() {
-        return new Gson().toJson(this);
+        return App.gson().toJson(this);
     }
 
     @Override
@@ -297,15 +317,12 @@ public class Result implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeList(this.types);
         dest.writeTypedList(this.list);
-        dest.writeString(App.gson().toJson(this.filters));
     }
 
     protected Result(Parcel in) {
         this.types = new ArrayList<>();
         in.readList(this.types, Class.class.getClassLoader());
         this.list = in.createTypedArrayList(Vod.CREATOR);
-        Type listType = new TypeToken<LinkedHashMap<String, List<Filter>>>() {}.getType();
-        this.filters = App.gson().fromJson(in.readString(), listType);
     }
 
     public static final Creator<Result> CREATOR = new Creator<>() {

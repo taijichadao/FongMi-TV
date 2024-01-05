@@ -1,6 +1,5 @@
 package com.github.catvod.utils;
 
-import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
@@ -11,14 +10,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class Path {
 
@@ -27,6 +22,10 @@ public class Path {
     private static File check(File file) {
         if (!file.exists()) file.mkdirs();
         return file;
+    }
+
+    public static boolean exists(String path) {
+        return new File(path.replace("file://", "")).exists();
     }
 
     public static File root() {
@@ -43,6 +42,10 @@ public class Path {
 
     public static String rootPath() {
         return root().getAbsolutePath();
+    }
+
+    public static File tv() {
+        return check(new File(root() + File.separator + "TV"));
     }
 
     public static File so() {
@@ -93,11 +96,6 @@ public class Path {
         return new File(files(), name);
     }
 
-    public static File so(String name) {
-        if (name.startsWith("http")) return new File(so(), Uri.parse(name).getLastPathSegment());
-        return new File("mitv".equals(name) ? cache() : so(), "lib".concat(name).concat(".so"));
-    }
-
     public static File js(String name) {
         return new File(js(), name);
     }
@@ -114,14 +112,6 @@ public class Path {
         File file1 = new File(path.replace("file:/", ""));
         File file2 = new File(path.replace("file:/", rootPath()));
         return file2.exists() ? file2 : file1.exists() ? file1 : new File(path);
-    }
-
-    public static String asset(String fileName) {
-        try {
-            return read(Init.context().getAssets().open(fileName));
-        } catch (Exception e) {
-            return "";
-        }
     }
 
     public static String read(File file) {
@@ -165,25 +155,35 @@ public class Path {
         }
     }
 
+    public static void move(File in, File out) {
+        copy(in, out);
+        clear(in);
+    }
+
     public static void copy(File in, File out) {
         try {
-            copy(new FileInputStream(in), new FileOutputStream(out));
+            copy(new FileInputStream(in), out);
         } catch (Exception ignored) {
         }
     }
 
     public static void copy(InputStream in, File out) {
         try {
-            copy(in, new FileOutputStream(out));
+            int read;
+            byte[] buffer = new byte[8192];
+            FileOutputStream fos = new FileOutputStream(out);
+            while ((read = in.read(buffer)) != -1) fos.write(buffer, 0, read);
+            fos.close();
+            in.close();
+            chmod(out);
         } catch (Exception ignored) {
         }
     }
 
-    public static void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
-        byte[] buffer = new byte[8192];
-        int amountRead;
-        while ((amountRead = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, amountRead);
+    public static void newFile(File file) {
+        try {
+            file.createNewFile();
+        } catch (Exception ignored) {
         }
     }
 
@@ -198,24 +198,9 @@ public class Path {
         if (dir.delete()) Log.d(TAG, "Deleted:" + dir.getAbsolutePath());
     }
 
-    public static void unzip(File target, File path) {
-        try (ZipFile zip = new ZipFile(target.getAbsolutePath())) {
-            Enumeration<?> entries = zip.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = (ZipEntry) entries.nextElement();
-                File out = new File(path, entry.getName());
-                if (entry.isDirectory()) out.mkdirs();
-                else copy(zip.getInputStream(entry), out);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public static File chmod(File file) {
         try {
-            Process process = Runtime.getRuntime().exec("chmod 777 " + file);
-            process.waitFor();
+            Shell.exec("chmod 777 " + file);
             return file;
         } catch (Exception e) {
             e.printStackTrace();

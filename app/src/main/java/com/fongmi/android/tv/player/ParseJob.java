@@ -7,10 +7,9 @@ import com.fongmi.android.tv.bean.Parse;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.impl.ParseCallback;
 import com.fongmi.android.tv.ui.custom.CustomWebView;
-import com.fongmi.android.tv.utils.Utils;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Json;
-import com.github.catvod.utils.Util;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -56,8 +55,14 @@ public class ParseJob implements ParseCallback {
         if (useParse) parse = ApiConfig.get().getParse();
         if (result.getPlayUrl().startsWith("json:")) parse = Parse.get(1, result.getPlayUrl().substring(5));
         if (result.getPlayUrl().startsWith("parse:")) parse = ApiConfig.get().getParse(result.getPlayUrl().substring(6));
-        if (parse == null) parse = Parse.get(0, result.getPlayUrl());
+        if (parse == null || parse.isEmpty()) parse = Parse.get(0, result.getPlayUrl());
         parse.setHeader(result.getHeader());
+        parse.setClick(getClick(result));
+    }
+
+    private String getClick(Result result) {
+        if (result.getClick().length() > 0) return result.getClick();
+        return ApiConfig.get().getSite(result.getKey()).getClick();
     }
 
     private void execute(Result result) {
@@ -94,7 +99,7 @@ public class ParseJob implements ParseCallback {
             case 3: //Json聚合
                 jsonMix(webUrl, flag);
                 break;
-            case 4: //上帝模式
+            case 4: //超級解析
                 godParse(webUrl, flag);
                 break;
         }
@@ -152,7 +157,7 @@ public class ParseJob implements ParseCallback {
     private void checkResult(Result result) {
         result.setHeader(parse.getExt().getHeader());
         if (result.getUrl().isEmpty()) onParseError();
-        else if (result.getParse() == 1) startWeb(result.getHeaders(), Utils.convert(result.getUrl().v()));
+        else if (result.getParse() == 1) startWeb(result.getHeaders(), UrlUtil.convert(result.getUrl().v()));
         else onParseSuccess(result.getHeaders(), result.getUrl().v(), result.getJxFrom());
     }
 
@@ -170,20 +175,20 @@ public class ParseJob implements ParseCallback {
     }
 
     private void startWeb(String key, Parse item, String webUrl) {
-        startWeb(key, item.getName(), item.getHeaders(), item.getUrl() + webUrl);
+        startWeb(key, item.getName(), item.getHeaders(), item.getUrl() + webUrl, item.getClick());
     }
 
     private void startWeb(Map<String, String> headers, String url) {
-        startWeb("", "", headers, url);
+        startWeb("", "", headers, url, "");
     }
 
-    private void startWeb(String key, String form, Map<String, String> headers, String url) {
-        App.post(() -> webViews.add(CustomWebView.create(App.get()).start(key, form, headers, url, this)));
+    private void startWeb(String key, String from, Map<String, String> headers, String url, String click) {
+        App.post(() -> webViews.add(CustomWebView.create(App.get()).start(key, from, headers, url, click, this, !url.contains("player/?url="))));
     }
 
     private Map<String, String> getHeader(JsonObject object) {
         Map<String, String> headers = new HashMap<>();
-        for (String key : object.keySet()) if (key.equalsIgnoreCase(HttpHeaders.USER_AGENT) || key.equalsIgnoreCase(HttpHeaders.REFERER)) headers.put(Util.fix(key), object.get(key).getAsString());
+        for (String key : object.keySet()) if (key.equalsIgnoreCase(HttpHeaders.USER_AGENT) || key.equalsIgnoreCase(HttpHeaders.REFERER)) headers.put(UrlUtil.fixHeader(key), object.get(key).getAsString());
         if (headers.isEmpty()) return parse.getHeaders();
         return headers;
     }

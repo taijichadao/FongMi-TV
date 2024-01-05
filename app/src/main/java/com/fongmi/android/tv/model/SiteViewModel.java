@@ -49,7 +49,7 @@ public class SiteViewModel extends ViewModel {
     public MutableLiveData<Result> player;
     public MutableLiveData<Result> search;
     public MutableLiveData<Danmu> danmaku;
-    public ExecutorService executor;
+    private ExecutorService executor;
 
     public SiteViewModel() {
         this.episode = new MutableLiveData<>();
@@ -66,7 +66,7 @@ public class SiteViewModel extends ViewModel {
         execute(result, () -> {
             Site site = ApiConfig.get().getHome();
             if (site.getType() == 3) {
-                Spider spider = ApiConfig.get().getCSP(site);
+                Spider spider = ApiConfig.get().getSpider(site);
                 String homeContent = spider.homeContent(true);
                 SpiderDebug.log(homeContent);
                 ApiConfig.get().setRecent(site);
@@ -94,7 +94,7 @@ public class SiteViewModel extends ViewModel {
         execute(result, () -> {
             Site site = ApiConfig.get().getSite(key);
             if (site.getType() == 3) {
-                Spider spider = ApiConfig.get().getCSP(site);
+                Spider spider = ApiConfig.get().getSpider(site);
                 String categoryContent = spider.categoryContent(tid, page, filter, extend);
                 SpiderDebug.log(categoryContent);
                 ApiConfig.get().setRecent(site);
@@ -117,7 +117,7 @@ public class SiteViewModel extends ViewModel {
         execute(result, () -> {
             Site site = ApiConfig.get().getSite(key);
             if (site.getType() == 3) {
-                Spider spider = ApiConfig.get().getCSP(site);
+                Spider spider = ApiConfig.get().getSpider(site);
                 String detailContent = spider.detailContent(Arrays.asList(id));
                 SpiderDebug.log(detailContent);
                 ApiConfig.get().setRecent(site);
@@ -152,7 +152,7 @@ public class SiteViewModel extends ViewModel {
             Source.get().stop();
             Site site = ApiConfig.get().getSite(key);
             if (site.getType() == 3) {
-                Spider spider = ApiConfig.get().getCSP(site);
+                Spider spider = ApiConfig.get().getSpider(site);
                 String playerContent = spider.playerContent(flag, id, ApiConfig.get().getFlags());
                 SpiderDebug.log(playerContent);
                 ApiConfig.get().setRecent(site);
@@ -160,7 +160,6 @@ public class SiteViewModel extends ViewModel {
                 if (result.getFlag().isEmpty()) result.setFlag(flag);
                 result.setUrl(Source.get().fetch(result));
                 result.setHeader(site.getHeader());
-                checkDanmaku(result);
                 result.setKey(key);
                 return result;
             } else if (site.getType() == 4) {
@@ -173,12 +172,12 @@ public class SiteViewModel extends ViewModel {
                 if (result.getFlag().isEmpty()) result.setFlag(flag);
                 result.setUrl(Source.get().fetch(result));
                 result.setHeader(site.getHeader());
-                checkDanmaku(result);
                 return result;
             } else if (site.isEmpty() && key.equals("push_agent")) {
                 Result result = new Result();
                 result.setParse(0);
                 result.setFlag(flag);
+                result.setUrl(Url.create().add(id));
                 result.setUrl(Source.get().fetch(result));
                 return result;
             } else {
@@ -191,6 +190,7 @@ public class SiteViewModel extends ViewModel {
                 result.setHeader(site.getHeader());
                 result.setPlayUrl(site.getPlayUrl());
                 result.setParse(Sniffer.isVideoFormat(url.v()) && result.getPlayUrl().isEmpty() ? 0 : 1);
+                SpiderDebug.log(result.toString());
                 return result;
             }
         });
@@ -198,7 +198,7 @@ public class SiteViewModel extends ViewModel {
 
     public void searchContent(Site site, String keyword, boolean quick) throws Throwable {
         if (site.getType() == 3) {
-            Spider spider = ApiConfig.get().getCSP(site);
+            Spider spider = ApiConfig.get().getSpider(site);
             String searchContent = spider.searchContent(Trans.t2s(keyword), quick);
             SpiderDebug.log(site.getName() + "," + searchContent);
             post(site, Result.fromJson(searchContent));
@@ -215,7 +215,7 @@ public class SiteViewModel extends ViewModel {
     public void searchContent(Site site, String keyword, String page) {
         execute(result, () -> {
             if (site.getType() == 3) {
-                Spider spider = ApiConfig.get().getCSP(site);
+                Spider spider = ApiConfig.get().getSpider(site);
                 String searchContent = spider.searchContent(Trans.t2s(keyword), false, page);
                 SpiderDebug.log(site.getName() + "," + searchContent);
                 Result result = Result.fromJson(searchContent);
@@ -272,11 +272,6 @@ public class SiteViewModel extends ViewModel {
             for (Future<List<Episode>> future : executor.invokeAll(flag.getMagnet(), 30, TimeUnit.SECONDS)) flag.getEpisodes().addAll(future.get());
             executor.shutdownNow();
         }
-    }
-
-    private void checkDanmaku(Result result) throws Exception {
-        if (result.getDanmaku().isEmpty() || !result.getDanmaku().startsWith("http")) return;
-        result.setDanmaku(OkHttp.newCall(result.getDanmaku()).execute().body().string());
     }
 
     private void post(Site site, Result result) {

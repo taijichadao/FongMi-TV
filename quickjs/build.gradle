@@ -9,9 +9,16 @@ android {
         minSdk 21
         targetSdk 28
     }
+
+    lint {
+        disable 'UnsafeOptInUsageError'
+    }
 }
 
 dependencies {
     implementation project(':catvod')
-    implementation 'wang.harlon.quickjs:wrapper-android:1.0.0-beta'
+    implementation 'org.jsoup:jsoup:' + jsoupVersion
+    implementation 'wang.harlon.quickjs:wrapper-java:1.0.0'
+    implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.4'
+    implementation(ext: 'aar', name: 'quickjs', group: 'fongmi', version: 'release')
 }

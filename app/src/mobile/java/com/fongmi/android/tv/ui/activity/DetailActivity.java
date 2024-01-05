@@ -166,7 +166,7 @@ public class DetailActivity extends BaseActivity implements FlagAdapter.OnClickL
         setText(mBinding.site, R.string.detail_site, getSite().getName());
         setText(mBinding.content, 0, Html.fromHtml(item.getVodContent()).toString());
         setText(mBinding.director, R.string.detail_director, Html.fromHtml(item.getVodDirector()).toString());
-        ImgUtil.load(item.getVodPic(getPic()), mBinding.pic);
+        ImgUtil.rect(item.getVodName(), item.getVodPic(getPic()), mBinding.pic);
         mFlagAdapter.addAll(item.getVodFlags());
         checkHistory(item);
         checkFlag(item);
@@ -199,9 +199,9 @@ public class DetailActivity extends BaseActivity implements FlagAdapter.OnClickL
         boolean empty = item.getVodFlags().isEmpty();
         mBinding.flag.setVisibility(empty ? View.GONE : View.VISIBLE);
         if (empty) {
-            ErrorEvent.episode();
+            ErrorEvent.flag();
         } else {
-            onItemClick(mHistory.getFlag(), true);
+            onItemClick(mHistory.getFlag());
             if (mHistory.isRevSort()) reverseEpisode(true);
         }
     }
@@ -222,7 +222,7 @@ public class DetailActivity extends BaseActivity implements FlagAdapter.OnClickL
     }
 
     @Override
-    public void onItemClick(Flag item, boolean force) {
+    public void onItemClick(Flag item) {
         if (item.isActivated()) return;
         mFlagAdapter.setActivated(item);
         mBinding.flag.scrollToPosition(mFlagAdapter.getPosition());

@@ -4,7 +4,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
 
-import com.google.gson.Gson;
+import com.fongmi.android.tv.App;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -21,6 +21,8 @@ public class Rule {
     private List<String> hosts;
     @SerializedName("regex")
     private List<String> regex;
+    @SerializedName("script")
+    private List<String> script;
 
     public static Rule create(String name) {
         return new Rule(name);
@@ -32,7 +34,7 @@ public class Rule {
 
     public static List<Rule> arrayFrom(JsonElement element) {
         Type listType = new TypeToken<List<Rule>>() {}.getType();
-        List<Rule> items = new Gson().fromJson(element, listType);
+        List<Rule> items = App.gson().fromJson(element, listType);
         return items == null ? Collections.emptyList() : items;
     }
 
@@ -46,6 +48,10 @@ public class Rule {
 
     public List<String> getRegex() {
         return regex == null ? Collections.emptyList() : regex;
+    }
+
+    public List<String> getScript() {
+        return script == null ? Collections.emptyList() : script;
     }
 
     @Override

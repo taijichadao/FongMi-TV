@@ -13,6 +13,7 @@ import com.fongmi.android.tv.utils.FileUtil;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.utils.Asset;
 import com.github.catvod.utils.Path;
 
 import java.io.File;
@@ -22,7 +23,7 @@ public class WallConfig {
 
     private Drawable drawable;
     private Config config;
-    private boolean same;
+    private boolean sync;
 
     private static class Loader {
         static volatile WallConfig INSTANCE = new WallConfig();
@@ -51,13 +52,13 @@ public class WallConfig {
     }
 
     public WallConfig init() {
-        this.config = Config.wall();
-        return this;
+        return config(Config.wall());
     }
 
     public WallConfig config(Config config) {
         this.config = config;
-        this.same = config.getUrl().equals(ApiConfig.get().getWall());
+        if (config.getUrl() == null) return this;
+        this.sync = config.getUrl().equals(ApiConfig.get().getWall());
         return this;
     }
 
@@ -75,7 +76,7 @@ public class WallConfig {
     }
 
     public void load(Callback callback) {
-        new Thread(() -> loadConfig(callback)).start();
+        App.execute(() -> loadConfig(callback));
     }
 
     private void loadConfig(Callback callback) {
@@ -94,13 +95,14 @@ public class WallConfig {
 
     private File write(File file) throws IOException {
         if (getUrl().startsWith("file")) Path.copy(Path.local(getUrl()), file);
+        else if (getUrl().startsWith("assets")) Path.copy(Asset.open(getUrl()), file);
         else if (getUrl().startsWith("http")) Path.write(file, ImgUtil.resize(OkHttp.newCall(getUrl()).execute().body().bytes()));
         else file.delete();
         return file;
     }
 
-    public boolean isSame(String url) {
-        return same || TextUtils.isEmpty(config.getUrl()) || url.equals(config.getUrl());
+    public boolean needSync(String url) {
+        return sync || TextUtils.isEmpty(config.getUrl()) || url.equals(config.getUrl());
     }
 
     public static void refresh(int index) {

@@ -1,14 +1,10 @@
 package com.fongmi.android.tv.cast;
 
-import androidx.annotation.NonNull;
-
-import com.android.cast.dlna.core.ICast;
 import com.fongmi.android.tv.server.Server;
 import com.github.catvod.utils.Path;
+import com.github.catvod.utils.Util;
 
-import java.util.UUID;
-
-public class CastVideo implements ICast {
+public class CastVideo {
 
     private final String name;
     private final String url;
@@ -19,26 +15,16 @@ public class CastVideo implements ICast {
 
     private CastVideo(String name, String url) {
         if (url.startsWith("file")) url = Server.get().getAddress() + "/" + url.replace(Path.rootPath(), "");
-        if (url.contains("127.0.0.1")) url = url.replace("127.0.0.1", Server.get().getIP());
+        if (url.contains("127.0.0.1")) url = url.replace("127.0.0.1", Util.getIp());
         this.name = name;
         this.url = url;
     }
 
-    @NonNull
-    @Override
-    public String getId() {
-        return UUID.randomUUID().toString();
-    }
-
-    @NonNull
-    @Override
-    public String getUri() {
-        return url;
-    }
-
-    @NonNull
-    @Override
     public String getName() {
         return name;
+    }
+
+    public String getUrl() {
+        return url;
     }
 }
